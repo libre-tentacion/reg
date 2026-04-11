@@ -3,117 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador - Reglamento Nacional de Circulación Vial</title>
+    <title>Buscador Oficial - Reglamento Vial Uruguay</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f7f6;
-        }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-        }
-        .search-container {
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        #searchInput {
-            width: 100%;
-            padding: 12px;
-            font-size: 18px;
-            border: 2px solid #3498db;
-            border-radius: 25px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-        #searchInput:focus {
-            border-color: #2980b9;
-        }
-        .articulo {
-            background: #fff;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            display: block;
-        }
-        .articulo h3 {
-            margin-top: 0;
-            color: #e67e22;
-        }
-        .articulo p {
-            margin-bottom: 0;
-        }
-        .hidden {
-            display: none;
-        }
-        .highlight {
-            background-color: yellow;
-            font-weight: bold;
-        }
+        :root { --primary: #0056b3; --accent: #e67e22; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { color: var(--primary); text-align: center; }
+        .search-box { position: sticky; top: 10px; z-index: 100; background: white; padding: 15px; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        #searchInput { width: 100%; border: none; font-size: 1.2rem; outline: none; padding-left: 10px; }
+        .articulo { background: white; padding: 20px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid var(--primary); transition: 0.3s; }
+        .articulo h3 { margin-top: 0; color: var(--accent); font-size: 1.1rem; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .articulo p { font-size: 0.95rem; color: #444; margin-top: 10px; }
+        .hidden { display: none; }
+        .count { text-align: right; color: #666; font-size: 0.8rem; margin-top: 5px; }
+        mark { background: #ffeb3b; padding: 2px; }
     </style>
 </head>
 <body>
 
-    <h1>📚 Buscador del Reglamento Vial</h1>
+<div class="container">
+    <h1>🔍 Reglamento Nacional de Circulación</h1>
     
-    <div class="search-container">
-        <input type="text" id="searchInput" placeholder="Escribe para buscar (ej: licencias, velocidad, luces)..." onkeyup="buscarArticulo()">
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Busca palabras clave (ej: preferencia, alcohol, luces)..." onkeyup="filtrar()">
+        <div id="counter" class="count">Mostrando todos los artículos</div>
     </div>
 
     <div id="listaArticulos">
         </div>
+</div>
 
-    <script>
-        // Base de datos de ejemplo basada en el reglamento
-        const datosReglamento = [
-            { titulo: "Título II - Licencias de Conducir", contenido: "Es obligatorio poseer una licencia vigente para conducir vehículos. Categorías A, B, C, D, F, G según peso y pasajeros." },
-            { titulo: "Capítulo IV - Alcohol y Drogas", contenido: "Está prohibido conducir bajo los efectos del alcohol o sustancias psicoactivas que disminuyan la aptitud." },
-            { titulo: "Capítulo VI - Dimensiones de Vehículos", contenido: "Ancho máximo 2,60m. Altura máxima general 4,10m. Longitud varía según el tipo de camión o remolque." },
-            { titulo: "Capítulo VII - Luces Obligatorias", contenido: "Uso de luces bajas, altas, de posición, freno e indicadores de giro. Luces blancas o amarillas adelante." },
-            { titulo: "Capítulo XII - Ubicación en Calzada", contenido: "Se debe circular por la derecha. En varias sendas, los vehículos lentos ocuparán la senda de la derecha." },
-            { titulo: "Capítulo XIII - Velocidades", contenido: "Límites de velocidad establecidos según la zona (urbana o carretera) y el tipo de vehículo." },
-            { titulo: "Título IV - Peatones", contenido: "Deben circular por las aceras y cruzar por las esquinas o zonas señalizadas (cebras)." },
-            { titulo: "Título X - Infracciones y Multas", contenido: "Clasificación de faltas en Grado 1, 2 y 3. Sanciones por exceso de velocidad, falta de documentos o fallas mecánicas." },
-            { titulo: "Capítulo VIII - Frenos", contenido: "Todo vehículo debe poseer un sistema de frenos de servicio y un freno de estacionamiento (freno de mano)." }
-        ];
+<script>
+[span_0](start_span)[span_1](start_span)[span_2](start_span)[span_3](start_span)[span_4](start_span)// Datos extraídos directamente del Reglamento Nacional de Circulación Vial[span_0](end_span)[span_1](end_span)[span_2](end_span)[span_3](end_span)[span_4](end_span)
+const reglamento = [
+    { id: "1.1", tit: "Competencias del Ejecutivo", cont: "El Poder Ejecutivo, por intermedio del MTOP, reglamentará el tránsito en toda vía del territorio nacional librada al uso público." },
+    { id: "1.4", tit: "Obligaciones del Usuario", cont: "Todo usuario de la vía pública (peatones, conductores, animales) está obligado a cumplir el reglamento y no generar peligro." },
+    { id: "2.1-2.3", tit: "Uso de Calzadas, Aceras y Banquinas", cont: "Las calzadas son para vehículos. Las aceras para peatones. Las banquinas solo para emergencia y detenciones con precaución." },
+    { id: "3.1", tit: "Habilitación para Conducir", cont: "Ninguna persona puede conducir vehículos de tracción mecánica si no está habilitado por la autoridad competente mediante licencia." },
+    { id: "3.7", tit: "Categorías de Licencias", cont: "Cat A: Hasta 9 pasajeros y 4000kg. Cat B: Hasta 18 pasajeros y 7000kg. Cat C: Camiones simples. Cat D: Camiones con acoplado. Cat F: Ómnibus." },
+    { id: "4.2", tit: "Estado Físico y Alcohol", cont: "Conductores deben estar física y psíquicamente aptos. Prohibido conducir en estado de ebriedad o bajo efectos de drogas o psicofármacos." },
+    { id: "6.1", tit: "Dimensiones Máximas", cont: "Ancho: 2.60m. Alto: 4.10m (pasajeros) y 4.30m (carga en corredores). Largo: Camión simple 13.20m, con remolque 20m." },
+    { id: "7.1", tit: "Luces Principales", cont: "Faros delanteros de luz blanca o amarillo selectivo. Luz baja: visibilidad 30m sin deslumbrar. Luz alta: visibilidad 100m." },
+    { id: "7.16-7.18", tit: "Vehículos de Dos Ruedas", cont: "Motos deben circular siempre con luz baja encendida. Bicicletas deben llevar dispositivo reflectante rojo trasero." },
+    { id: "11.1", tit: "Normas para Peatones", cont: "Deben circular por las aceras ordenadamente. En puentes, usar veredas o ir junto al borde de calzada de frente al tránsito." },
+    { id: "15.1-15.7", tit: "Preferencias de Paso", cont: "Regulación sobre preferencias en intersecciones, señales de Ceda el Paso y Pare. Se debe reducir velocidad en cruces ferroviarios." },
+    { id: "18.1-18.3", tit: "Estacionamiento", cont: "Prohibido estacionar en doble fila, intersecciones, cruces peatonales, puentes, túneles o curvas de visibilidad reducida." },
+    { id: "20.1", tit: "Vehículos de Emergencia", cont: "En urgencia y con señales audibles/visibles, pueden exceder límites de velocidad y no respetar ciertas señales bajo su responsabilidad." },
+    { id: "27.1-27.8", tit: "Sanciones e Infracciones", cont: "Clasificación de faltas en Grado 1 (leves) y Grado 2 (graves como falta de documentación o luces reglamentarias)." }
+];
 
-        const listaDiv = document.getElementById('listaArticulos');
+function cargar() {
+    const lista = document.getElementById('listaArticulos');
+    lista.innerHTML = reglamento.map(a => `
+        <div class="articulo">
+            <h3>Art. ${a.id} - ${a.tit}</h3>
+            <p>${a.cont}</p>
+        </div>
+    `).join('');
+}
 
-        // Función para cargar los artículos inicialmente
-        function cargarArticulos() {
-            listaDiv.innerHTML = '';
-            datosReglamento.forEach(art => {
-                const div = document.createElement('div');
-                div.className = 'articulo';
-                div.innerHTML = `<h3>${art.titulo}</h3><p>${art.contenido}</p>`;
-                listaDiv.appendChild(div);
-            });
+function filtrar() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const articulos = document.querySelectorAll('.articulo');
+    let visibles = 0;
+
+    articulos.forEach(div => {
+        const texto = div.innerText.toLowerCase();
+        if (texto.includes(query)) {
+            div.classList.remove('hidden');
+            visibles++;
+        } else {
+            div.classList.add('hidden');
         }
+    });
 
-        // Función de búsqueda por coincidencia
-        function buscarArticulo() {
-            const input = document.getElementById('searchInput').value.toLowerCase();
-            const articulos = document.getElementsByClassName('articulo');
+    document.getElementById('counter').innerText = `Encontrados: ${visibles} artículos`;
+}
 
-            for (let i = 0; i < articulos.length; i++) {
-                const texto = articulos[i].innerText.toLowerCase();
-                if (texto.includes(input)) {
-                    articulos[i].classList.remove('hidden');
-                } else {
-                    articulos[i].classList.add('hidden');
-                }
-            }
-        }
-
-        // Inicializar
-        cargarArticulos();
-    </script>
+cargar();
+</script>
 
 </body>
 </html>
