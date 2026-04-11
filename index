@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inspector - Buscador de Infracciones</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f0f2f5; font-family: system-ui, -apple-system, sans-serif; }
+        .card { background: white; padding: 1rem; border-radius: 0.75rem; margin-bottom: 0.75rem; border-left: 4px solid #1e40af; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .art-code { color: #1e40af; font-weight: 800; font-size: 0.85rem; }
+        .sticky-header { position: sticky; top: 0; background: #f0f2f5; padding-bottom: 1rem; z-index: 10; }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-2xl mx-auto">
+        <div class="sticky-header">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2 text-center">Buscador de Infracciones</h1>
+            <input type="text" id="searchInput" placeholder="Buscar por artículo o palabra (ej: luces, pare)..." 
+                   class="w-full p-4 border-2 border-blue-200 rounded-xl shadow-sm focus:border-blue-500 focus:ring-0 outline-none transition-all">
+        </div>
+        <div id="results" class="mt-2"></div>
+    </div>
+
+    <script>
+        const reglamento = [
+            { art: "2.2", desc: "uso indebido de acera" },
+            { art: "3.1.1 L26", desc: "sin licencia de conducir/suspendido" },
+            { art: "3.1.2 L26", desc: "licencia vencida/fuera de categoría" },
+            { art: "4.1.1", desc: "no exhibir documentación" },
+            { art: "4.1.2", desc: "no portar registro vehicular" },
+            { art: "4.2.1 L45/46", desc: "conducir alcoholizado" },
+            { art: "4.2.2", desc: "conducir bajo efectos de droga" },
+            { art: "4.3.1", desc: "no respeta señalamiento dispuestos por IDP" },
+            { art: "4.3.2", desc: "no respeta indicación de inspector" },
+            { art: "4.4.1", desc: "conduce con imprudencia" },
+            { art: "4.4.2 L13 81/014-58", desc: "manipula telefonía móvil" },
+            { art: "4.8 L31", desc: "conductor o pasajeros sin cinturón seguridad" },
+            { art: "4.9.1 L1 81/014-1", desc: "menor de 12 años en asiento delantero" },
+            { art: "4.9.2 L1 81/014-1", desc: "menor de 12 años sin SRI" },
+            { art: "5.2a", desc: "vehículo sin empadronar" },
+            { art: "7.30 L30", desc: "circula con luces cortas apagadas (DRL)" },
+            { art: "7.1", desc: "luces de color no reglamentario(auto)" },
+            { art: "7.1a", desc: "carece o no funciona luz corta" },
+            { art: "7.3.2", desc: "no tiene/quemada luz posición trasera (AUTO)" },
+            { art: "7.5", desc: "no tiene/quemada luz de freno (AUTO)" },
+            { art: "7.6", desc: "no tiene/quemada luz de giro(AUTO)" },
+            { art: "7.14a", desc: "no señaliza carga saliente" },
+            { art: "7.15a", desc: "uso incorrecto/no reglamentario faro antiniebla" },
+            { art: "7.16a", desc: "no tiene/quemada luces delanteras (MOTO)" },
+            { art: "7.16b", desc: "no tiene/quemadas luces traseras (MOTO)" },
+            { art: "7.16", desc: "color luz no reglamentario (MOTO)" },
+            { art: "8.1", desc: "carece o no funciona sistema de frenos" },
+            { art: "8.2a", desc: "carece o no funciona freno de mano" },
+            { art: "9.2", desc: "uso indebido de bocina" },
+            { art: "10.13.1", desc: "falta/ilegible chapa matrícula" },
+            { art: "10.13.2", desc: "chapa matrícula deteriorada" },
+            { art: "10.14", desc: "elementos interiores/exteriores salientes (enganche)" },
+            { art: "10.16.1", desc: "falta espejo moto/auto" },
+            { art: "10.20d", desc: "carece/no funciona cinturón de seguridad" },
+            { art: "10.68.9 L56", desc: "moto fuera de condiciones" },
+            { art: "10.2", desc: "carece de silenciador/no funciona (MOTO/AUTO)" },
+            { art: "12.1", desc: "no circular por la derecha" },
+            { art: "12.6", desc: "circula contramano (contraflecha)" },
+            { art: "12.7", desc: "adelantar en intersección" },
+            { art: "13.1", desc: "no mantiene distancia prudencial de circulación" },
+            { art: "14.1.2", desc: "conduce de forma imprudente o desatenta" },
+            { art: "14.7", desc: "adelantar en intersección" },
+            { art: "14.9", desc: "adelantar en cruce peatonal" },
+            { art: "15.2", desc: "no respeta preferencia de derecha" },
+            { art: "15.3.1", desc: "no respeta cartel PARE" },
+            { art: "15.3.2", desc: "no respeta cartel CEDA EL PASO" },
+            { art: "15.4", desc: "no respeta señal luminosa (semáforo)" },
+            { art: "15.7", desc: "no dar preferencia al girar" },
+            { art: "15.8", desc: "no dar preferencia al entrar o salir de inmueble/vía pública" },
+            { art: "15.9.1 L17", desc: "no dar preferencia a peatón en cruce señalizado" },
+            { art: "15.9.2 L17", desc: "no dar preferencia a peatón en intersección" },
+            { art: "16.1", desc: "no ubicarse o señalizar giro a la izquierda" },
+            { art: "16.2", desc: "no ubicarse o señalizar giro a la derecha" },
+            { art: "16.5", desc: "inversión sentido de marcha imprudente(giro en U)" },
+            { art: "16.6", desc: "no señaliza maniobra" },
+            { art: "16.7", desc: "señaliza incorrectamente" },
+            { art: "17.1", desc: "vehículo especial circula sin autorización" },
+            { art: "17.2", desc: "marcha atrás incorrecta" },
+            { art: "17.3", desc: "remolque inadecuado de vehículo" },
+            { art: "18.1.1", desc: "estacionado en sentido opuesto de circulación" },
+            { art: "18.1.2", desc: "estaciona a mayor distancia del cordón permitido(20cms)" },
+            { art: "18.1.3", desc: "no estacionar en paralelo/fuera de zonas autorizadas" },
+            { art: "18.2.1", desc: "estacionado en doble fila" },
+            { art: "18.2.2", desc: "estacionar en intersección" },
+            { art: "18.2.3", desc: "estacionar en cruce peatonal" },
+            { art: "18.2.4", desc: "estacionar en puente/viaducto/paso nivel" },
+            { art: "18.2.5", desc: "estacionar en curva/rasante sin visibilidad" },
+            { art: "18.2.6", desc: "estacionar a menos de 10mts. cartel PARE/CEDA EL PASO" },
+            { art: "18.2.7", desc: "estacionar parada ómnibus/taxi" },
+            { art: "18.2.8", desc: "estacionar entrada inmueble" },
+            { art: "18.2.9", desc: "estacionar junto a canteros centrales" },
+            { art: "18.4", desc: "ponerse en movimiento sin señalizar" },
+            { art: "18.8", desc: "operación carga y descarga dificulta la circulación" },
+            { art: "18.9.1", desc: "estacionar en lugar prohibido/regulado" },
+            { art: "21.2.2", desc: "acompañante en moto no habilitado" },
+            { art: "21.2.3", desc: "carga en moto afecta conducción" },
+            { art: "21.2.5", desc: "conductor/acompañante moto asido de otro vehículo" },
+            { art: "21.3.1 L33 81/014-46", desc: "no uso casco protector" },
+            { art: "21.3.2", desc: "circulación de motos entre sendas de vehículos" },
+            { art: "21.7", desc: "menor no alcanza posapies" },
+            { art: "21.8 L7 81/014-26", desc: "no uso chaleco/banda/campera retroreflectiva" },
+            { art: "27.4", desc: "no firma ACI" },
+            { art: "27.20 L56", desc: "INCAUTACIÓN" },
+            { art: "Or. 8927 art 42", desc: "circula en exceso de pasajeros" },
+            { art: "Or. 8927 art 47", desc: "no respeta preferencia de Avenida" },
+            { art: "Or. 8927 art 49", desc: "no respeta vía preferencial" },
+            { art: "Or. 8927 art 51", desc: "no respeta preferencia de rotonda" },
+            { art: "Or. 8927 art 78", desc: "vehículo en estado de abandono" },
+            { art: "Or. 8927 art 210", desc: "circula en declaración jurada" },
+            { art: "D. 8846 art 26", desc: "sin recibo de pago de patente" },
+            { art: "R. 4.11", desc: "sin inspección vehicular vigente (TAXIS)" },
+            { art: "Dec. 9064 art. 22", desc: "circula sin precinto (TAXIS)" },
+            { art: "Dec. 9064 art. 24", desc: "reloj sin cubrir en diligencias personales (TAXIS)" },
+            { art: "Dec. 9064 art. 32", desc: "fuera de parada (TAXIS)" },
+            { art: "Dec. 9064 art. 41 a", desc: "vehículo y reloj en malas condiciones (TAXIS)" },
+            { art: "Dec. 9064 art. 41 d", desc: "falta acrílico (bonete)/sin matrícula en luz (TAXIS)" },
+            { art: "Dec. 9064 art. 41 e", desc: "falta cartilla vigente (TAXIS)" },
+            { art: "Dec. 9064 art. 49 e", desc: "falta carné salud vigente (TAXIS)" }
+        ];
+
+        const searchInput = document.getElementById('searchInput');
+        const resultsDiv = document.getElementById('results');
+
+        function render(list) {
+            resultsDiv.innerHTML = list.map(i => `
+                <div class="card">
+                    <div class="art-code">ARTÍCULO ${i.art}</div>
+                    <div class="text-gray-800 font-medium">${i.desc}</div>
+                </div>
+            `).join('');
+        }
+
+        searchInput.addEventListener('input', () => {
+            const q = searchInput.value.toLowerCase();
+            render(reglamento.filter(i => i.desc.toLowerCase().includes(q) || i.art.toLowerCase().includes(q)));
+        });
+
+        render(reglamento);
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+    </script>
+</body>
+</html>
