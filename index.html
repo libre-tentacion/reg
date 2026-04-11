@@ -3,118 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador RNCV - Oficial Uruguay</title>
+    <title>Buscador - Reglamento Nacional de Circulación Vial</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f0f2f5; color: #1c1e21; }
-        .header { background-color: #0056b3; color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .container { max-width: 900px; margin: 20px auto; padding: 0 20px; }
-        .search-container { position: sticky; top: 10px; z-index: 100; margin-bottom: 25px; }
-        input { width: 100%; padding: 15px 25px; border: 2px solid #ddd; border-radius: 30px; font-size: 16px; outline: none; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        input:focus { border-color: #0056b3; }
-        .item-reglamento { background: white; border-radius: 8px; padding: 15px; margin-bottom: 12px; border-left: 5px solid #0056b3; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .art-info { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9em; }
-        .art-num { font-weight: bold; color: #0056b3; }
-        .cap-name { color: #65676b; font-style: italic; }
-        .texto { line-height: 1.5; font-size: 0.95em; }
-        .highlight { background-color: #ffd54f; font-weight: bold; }
-        .contador { font-size: 14px; color: #606770; margin-bottom: 10px; text-align: right; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f7f6;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .search-container {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        #searchInput {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            border: 2px solid #3498db;
+            border-radius: 25px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        #searchInput:focus {
+            border-color: #2980b9;
+        }
+        .articulo {
+            background: #fff;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: block;
+        }
+        .articulo h3 {
+            margin-top: 0;
+            color: #e67e22;
+        }
+        .articulo p {
+            margin-bottom: 0;
+        }
+        .hidden {
+            display: none;
+        }
+        .highlight {
+            background-color: yellow;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1 style="margin:0; font-size: 1.5em;">Reglamento Nacional de Circulación Vial</h1>
-        <small>Actualizado según Decreto 118/984 y modificativos</small>
+
+    <h1>📚 Buscador del Reglamento Vial</h1>
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Escribe para buscar (ej: licencias, velocidad, luces)..." onkeyup="buscarArticulo()">
     </div>
-    <div class="container">
-        <div class="search-container">
-            <input type="text" id="inputBusqueda" placeholder="Buscar por artículo o palabra clave (ej: cinturón, alcohol, preferencia)..." onkeyup="ejecutarBusqueda()">
+
+    <div id="listaArticulos">
         </div>
-        <div id="contadorResultados" class="contador"></div>
-        <div id="contenedorArticulos"></div>
-    </div>
 
     <script>
+        // Base de datos de ejemplo basada en el reglamento
         const datosReglamento = [
-            // CAPÍTULO I - COMPETENCIAS
-            { cap: "I - Competencias", art: "1.4", desc: "Todo usuario de la vía pública está obligado a cumplir con el reglamento y no causar peligro." },
-            
-            // CAPÍTULO II - USO DE LA VÍA
-            { cap: "II - Uso de la vía", art: "2.1", desc: "Las calzadas son para uso de los vehículos." },
-            { cap: "II - Uso de la vía", art: "2.2", desc: "Las aceras son para uso de los peatones." },
-            
-            // CAPÍTULO IV - OBLIGACIONES
-            { cap: "IV - Obligaciones", art: "4.1", desc: "Conductores deben llevar habilitación, empadronamiento y exhibirlos ante la autoridad." },
-            { cap: "IV - Obligaciones", art: "4.2", desc: "Prohibido conducir en estado de ebriedad, bajo efectos de drogas o psicofármacos." },
-            { cap: "IV - Obligaciones", art: "4.8", desc: "Uso obligatorio de cinturón de seguridad para conductor y pasajeros." },
-            { cap: "IV - Obligaciones", art: "4.9.1", desc: "Menores de 12 años deben viajar en el asiento trasero." },
-            { cap: "IV - Obligaciones", art: "4.9.2", desc: "Uso obligatorio de Sistemas de Retención Infantil (SRI) para menores." },
-
-            // CAPÍTULO VI - DIMENSIONES
-            { cap: "VI - Dimensiones", art: "6.1.1", desc: "Ancho máximo permitido: 2,60 metros." },
-            
-            // CAPÍTULO VII - LUCES
-            { cap: "VII - Luces", art: "7.30", desc: "Obligatoriedad de circular con luces cortas (DRL) encendidas permanentemente." },
-
-            // CAPÍTULO XI - PEATONES
-            { cap: "XI - Peatones", art: "11.1", desc: "Peatones deben circular por aceras ordenadamente sin provocar molestias." },
-
-            // CAPÍTULO XV - PREFERENCIAS DE PASO
-            { cap: "XV - Preferencias", art: "15.2", desc: "Preferencia de paso para el vehículo que aparece por la derecha en intersecciones." },
-            { cap: "XV - Preferencias", art: "15.3", desc: "Obligación de detenerse ante señal de PARE y reducir ante CEDA EL PASO." },
-
-            // CAPÍTULO XVIII - ESTACIONAMIENTO
-            { cap: "XVIII - Estacionamiento", art: "18.2.a", desc: "Prohibido estacionar formando doble fila." },
-            { cap: "XVIII - Estacionamiento", art: "18.2.f", desc: "Prohibido estacionar a menos de 10 metros de señales de PARE o CEDA EL PASO." },
-
-            // CAPÍTULO XX - VEHÍCULOS DE EMERGENCIA
-            { cap: "XX - Emergencia", art: "20.1", desc: "Vehículos de emergencia pueden exceder límites de velocidad y no respetar preferencias bajo responsabilidad." },
-
-            // CAPÍTULO XXI - DOS RUEDAS
-            { cap: "XXI - Dos Ruedas", art: "21.3.1", desc: "Uso obligatorio de casco protector para conductores de motocicletas." },
-            { cap: "XXI - Dos Ruedas", art: "21.8", desc: "Uso obligatorio de chaleco o bandas retroreflectivas para motociclistas." },
-
-            // CAPÍTULO XXVII - SANCIONES
-            { cap: "XXVII - Sanciones", art: "27.4", desc: "Infracción por no firmar el Acta de Constatación (ACI)." },
-            { cap: "XXVII - Sanciones", art: "27.20", desc: "Facultad de incautación del vehículo por infracciones graves." }
+            { titulo: "Título II - Licencias de Conducir", contenido: "Es obligatorio poseer una licencia vigente para conducir vehículos. Categorías A, B, C, D, F, G según peso y pasajeros." },
+            { titulo: "Capítulo IV - Alcohol y Drogas", contenido: "Está prohibido conducir bajo los efectos del alcohol o sustancias psicoactivas que disminuyan la aptitud." },
+            { titulo: "Capítulo VI - Dimensiones de Vehículos", contenido: "Ancho máximo 2,60m. Altura máxima general 4,10m. Longitud varía según el tipo de camión o remolque." },
+            { titulo: "Capítulo VII - Luces Obligatorias", contenido: "Uso de luces bajas, altas, de posición, freno e indicadores de giro. Luces blancas o amarillas adelante." },
+            { titulo: "Capítulo XII - Ubicación en Calzada", contenido: "Se debe circular por la derecha. En varias sendas, los vehículos lentos ocuparán la senda de la derecha." },
+            { titulo: "Capítulo XIII - Velocidades", contenido: "Límites de velocidad establecidos según la zona (urbana o carretera) y el tipo de vehículo." },
+            { titulo: "Título IV - Peatones", contenido: "Deben circular por las aceras y cruzar por las esquinas o zonas señalizadas (cebras)." },
+            { titulo: "Título X - Infracciones y Multas", contenido: "Clasificación de faltas en Grado 1, 2 y 3. Sanciones por exceso de velocidad, falta de documentos o fallas mecánicas." },
+            { titulo: "Capítulo VIII - Frenos", contenido: "Todo vehículo debe poseer un sistema de frenos de servicio y un freno de estacionamiento (freno de mano)." }
         ];
 
-        function ejecutarBusqueda() {
-            const query = document.getElementById('inputBusqueda').value.toLowerCase();
-            const contenedor = document.getElementById('contenedorArticulos');
-            const contador = document.getElementById('contadorResultados');
-            contenedor.innerHTML = '';
+        const listaDiv = document.getElementById('listaArticulos');
 
-            if (query.trim() === '') {
-                contador.innerHTML = '';
-                return;
-            }
-
-            const filtrados = datosReglamento.filter(i => 
-                i.desc.toLowerCase().includes(query) || 
-                i.art.toLowerCase().includes(query) ||
-                i.cap.toLowerCase().includes(query)
-            );
-
-            contador.innerHTML = `Resultados encontrados: ${filtrados.length}`;
-
-            filtrados.forEach(i => {
+        // Función para cargar los artículos inicialmente
+        function cargarArticulos() {
+            listaDiv.innerHTML = '';
+            datosReglamento.forEach(art => {
                 const div = document.createElement('div');
-                div.className = 'item-reglamento';
-                
-                let textoFinal = i.desc;
-                const regex = new RegExp(`(${query})`, 'gi');
-                textoFinal = textoFinal.replace(regex, '<span class="highlight">$1</span>');
-
-                div.innerHTML = `
-                    <div class="art-info">
-                        <span class="art-num">Art. ${i.art}</span>
-                        <span class="cap-name">Cap. ${i.cap}</span>
-                    </div>
-                    <div class="texto">${textoFinal}</div>
-                `;
-                contenedor.appendChild(div);
+                div.className = 'articulo';
+                div.innerHTML = `<h3>${art.titulo}</h3><p>${art.contenido}</p>`;
+                listaDiv.appendChild(div);
             });
         }
+
+        // Función de búsqueda por coincidencia
+        function buscarArticulo() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const articulos = document.getElementsByClassName('articulo');
+
+            for (let i = 0; i < articulos.length; i++) {
+                const texto = articulos[i].innerText.toLowerCase();
+                if (texto.includes(input)) {
+                    articulos[i].classList.remove('hidden');
+                } else {
+                    articulos[i].classList.add('hidden');
+                }
+            }
+        }
+
+        // Inicializar
+        cargarArticulos();
     </script>
+
 </body>
 </html>
