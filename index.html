@@ -3,58 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador Reglamento Nacional</title>
+    <title>Buscador RNCV - Fiscalización</title>
     <style>
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
-        .resultado { border-bottom: 1px solid #eee; padding: 10px 0; }
-        .art { font-weight: bold; color: #d32f2f; }
-        .desc { color: #333; margin-top: 5px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background-color: #f0f2f5; color: #333; }
+        .header { background-color: #1a73e8; color: white; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        input { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 25px; font-size: 16px; outline: none; box-sizing: border-box; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input:focus { border-color: #1a73e8; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .count { margin: 10px 0; font-size: 14px; color: #666; text-align: right; }
+        .resultado { background: white; border-left: 6px solid #d32f2f; padding: 15px; margin-bottom: 12px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); animation: fadeIn 0.3s ease; }
+        .art { font-weight: bold; font-size: 1.1em; color: #d32f2f; margin-bottom: 5px; display: flex; justify-content: space-between; }
+        .desc { font-size: 0.95em; line-height: 1.5; color: #444; }
+        .cat { font-size: 0.75em; color: #1a73e8; text-transform: uppercase; font-weight: bold; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
+    <div class="header">
+        <h2 style="margin:0">Buscador de Infracciones</h2>
+        <p style="margin:5px 0 0 0; font-size:0.8em; opacity:0.9">Reglamento Nacional de Circulación Vial</p>
+    </div>
     <div class="container">
-        <h2>Buscador de Tránsito</h2>
-        <input type="text" id="buscador" placeholder="Ej: casco, alcohol, luces, art 4.2..." onkeyup="buscar()">
+        <input type="text" id="buscador" placeholder="Busque: casco, alcohol, luces, documentos..." onkeyup="buscar()">
+        <div id="info" class="count"></div>
         <div id="lista-resultados"></div>
     </div>
 
     <script>
-        // Datos extraídos del Reglamento Nacional de Circulación Vial
         const reglamento = [
-            { art: "Art. 4.1", desc: "Obligación de llevar documentos (licencia, empadronamiento) y exhibirlos ante la autoridad." },
-            { art: "Art. 4.2.1", desc: "Prohibición de conducir en estado de ebriedad o bajo efectos de drogas." },
-            { art: "Art. 4.3", desc: "Respetar señalamientos e indicaciones del personal de fiscalización (detención inmediata)." },
-            { art: "Art. 4.4", desc: "Prohibición de conducir vehículos o animales con imprudencia o descuido." },
-            { art: "Art. 6.1.1", desc: "Ancho máximo permitido: 2,60 metros." },
-            { art: "Art. 7.1", desc: "Requisitos de luces delanteras (blanca/amarilla) y alcance de luz alta (100m) y baja (30m)." },
-            { art: "Art. 10.13", desc: "Obligación de portar las dos placas de matrícula legibles y visibles." },
-            { art: "Art. 13.5", desc: "Prohibición de circular a una velocidad tan lenta que obstaculice el tránsito normal." },
-            { art: "Art. 18.2", desc: "Prohibiciones de estacionamiento: doble fila, intersecciones, cruces peatonales, puentes, etc." },
-            { art: "Art. 21.3.1", desc: "Uso obligatorio de casco protector para conductores y acompañantes de motos." },
-            { art: "Art. 27.4", desc: "Infracción por negativa a firmar el Acta de Constatación de Infracción (ACI)." },
-            { art: "Art. 27.20", desc: "Facultad de INCAUTACIÓN del vehículo por la autoridad competente." }
-            // Se pueden seguir agregando más artículos del PDF aquí
+            // DOCUMENTACIÓN Y HABILITACIONES
+            { cat: "Conductores", art: "Art. 3.1.1 L26", desc: "Circular sin licencia de conducir o estando suspendida." },
+            { cat: "Conductores", art: "Art. 3.1.2 L26", desc: "Licencia de conducir vencida o de categoría diferente a la del vehículo." },
+            { cat: "Conductores", art: "Art. 4.1.1", desc: "No exhibir la documentación habilitante ante la autoridad (licencia, etc)." },
+            { cat: "Conductores", art: "Art. 4.1.2", desc: "No portar el registro vehicular (libreta de propiedad)." },
+            { cat: "Conductores", art: "Art. 3.13", desc: "Obligación de denunciar cambio de domicilio dentro de los 15 días hábiles." },
+            
+            // ESTADO DEL CONDUCTOR
+            { cat: "Aptitud", art: "Art. 4.2.1 L45/46", desc: "CONDUCIR ALCOHOLIZADO (Estado de ebriedad)." },
+            { cat: "Aptitud", art: "Art. 4.2.2", desc: "Conducir bajo efectos de drogas o psicofármacos." },
+            { cat: "Conductores", art: "Art. 4.4.1", desc: "Conducir con imprudencia o descuido." },
+            { cat: "Conductores", art: "Art. 4.4.2 L13", desc: "Manipular telefonía móvil (celular) durante la conducción." },
+            
+            // AUTORIDAD Y SEÑALIZACIÓN
+            { cat: "Autoridad", art: "Art. 4.3.1", desc: "No respetar señalamientos dispuestos por la IDP." },
+            { cat: "Autoridad", art: "Art. 4.3.2", desc: "No respetar indicaciones o señales manuales del Inspector de Tránsito." },
+            { cat: "Autoridad", art: "Art. 27.4", desc: "Negativa a firmar el Acta de Constatación de Infracción (ACI)." },
+            { cat: "Autoridad", art: "Art. 27.20 L56", desc: "INCAUTACIÓN del vehículo por la autoridad competente." },
+            
+            // LUCES Y ELEMENTOS (AUTO Y MOTO)
+            { cat: "Luces", art: "Art. 7.30 L30", desc: "Circular con luces cortas apagadas (DRL) en horario obligatorio." },
+            { cat: "Luces", art: "Art. 7.1", desc: "Uso de luces de color no reglamentario." },
+            { cat: "Luces", art: "Art. 7.1a", desc: "Carencia o mal funcionamiento de luz corta delantera." },
+            { cat: "Luces", art: "Art. 7.5", desc: "Carencia o mal funcionamiento de luces de freno." },
+            { cat: "Luces", art: "Art. 7.6", desc: "Carencia o mal funcionamiento de luces de giro." },
+            { cat: "Luces", art: "Art. 7.16a", desc: "MOTO: No tiene o no funciona luz delantera." },
+            { cat: "Luces", art: "Art. 7.16b", desc: "MOTO: No tiene o no funciona luz trasera." },
+            { cat: "Luces", art: "Art. 7.15a", desc: "Uso incorrecto o no reglamentario de faros antiniebla." },
+            
+            // VEHÍCULO Y SEGURIDAD
+            { cat: "Vehículo", art: "Art. 5.2a", desc: "Vehículo sin empadronar o sin registro municipal." },
+            { cat: "Vehículo", art: "Art. 10.13.1", desc: "Falta de placa de matrícula o matrícula ilegible." },
+            { cat: "Vehículo", art: "Art. 10.13.2", desc: "Chapa matrícula en mal estado o deteriorada." },
+            { cat: "Seguridad", art: "Art. 4.8 L31", desc: "Conductor o pasajeros sin cinturón de seguridad colocado." },
+            { cat: "Seguridad", art: "Art. 4.9.1", desc: "Menor de 12 años viajando en asiento delantero." },
+            { cat: "Seguridad", art: "Art. 4.9.2", desc: "Menor de 12 años sin Sistema de Retención Infantil (SRI)." },
+            { cat: "Seguridad", art: "Art. 8.1", desc: "Carencia o mal funcionamiento del sistema de frenos." },
+            { cat: "Seguridad", art: "Art. 10.16.1", desc: "Falta de espejos retrovisores obligatorios (Auto/Moto)." },
+            { cat: "Vehículo", art: "Art. 10.14", desc: "Presencia de elementos salientes peligrosos (interiores o exteriores)." },
+            
+            // CIRCULACIÓN Y ESTACIONAMIENTO
+            { cat: "Circulación", art: "Art. 2.2", desc: "Uso indebido de la acera (circular o estacionar sobre ella)." },
+            { cat: "Estacionamiento", art: "Art. 18.2.1", desc: "Estacionamiento en doble fila." },
+            { cat: "Estacionamiento", art: "Art. 18.9.1", desc: "Estacionar en lugar prohibido o debidamente regulado." },
+            { cat: "Circulación", art: "Art. 13.1", desc: "Exceso de velocidad sobre los límites permitidos." },
+            { cat: "Circulación", art: "Art. 13.5", desc: "Circular a una velocidad tan lenta que obstaculice el tránsito." },
+            
+            // MOTOS Y DOS RUEDAS
+            { cat: "Motos", art: "Art. 21.3.1", desc: "NO USO DE CASCO PROTECTOR (Conductor o acompañante)." },
+            { cat: "Motos", art: "Art. 21.8 L7", desc: "No uso de chaleco, banda o campera retroreflectiva." },
+            { cat: "Motos", art: "Art. 21.2.2", desc: "Llevar acompañante en moto no habilitada para dos personas." },
+            { cat: "Motos", art: "Art. 21.7", desc: "Menor de edad que no alcanza los posapiés en moto." },
+            { cat: "Motos", art: "Art. 21.3.2", desc: "Circular entre sendas de otros vehículos (serpenteo peligroso)." }
         ];
 
         function buscar() {
-            const termino = document.getElementById('buscador').value.toLowerCase();
-            const lista = document.getElementById('lista-resultados');
-            lista.innerHTML = '';
+            const t = document.getElementById('buscador').value.toLowerCase();
+            const l = document.getElementById('lista-resultados');
+            const info = document.getElementById('info');
+            l.innerHTML = '';
+            
+            if (t.length < 2) {
+                info.innerHTML = '';
+                return;
+            }
 
-            if (termino.length < 2) return;
-
-            const filtrados = reglamento.filter(item => 
-                item.art.toLowerCase().includes(termino) || 
-                item.desc.toLowerCase().includes(termino)
+            const filtrados = reglamento.filter(i => 
+                i.art.toLowerCase().includes(t) || 
+                i.desc.toLowerCase().includes(t) || 
+                i.cat.toLowerCase().includes(t)
             );
 
-            filtrados.forEach(item => {
+            info.innerHTML = `Resultados encontrados: ${filtrados.length}`;
+
+            filtrados.forEach(i => {
                 const div = document.createElement('div');
                 div.className = 'resultado';
-                div.innerHTML = `<div class="art">${item.art}</div><div class="desc">${item.desc}</div>`;
-                lista.appendChild(div);
+                div.innerHTML = `
+                    <div class="art">
+                        <span>${i.art}</span>
+                        <span class="cat">${i.cat}</span>
+                    </div>
+                    <div class="desc">${i.desc}</div>
+                `;
+                l.appendChild(div);
             });
         }
     </script>
