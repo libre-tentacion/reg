@@ -1,108 +1,11 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador de Tránsito</title>
-    <style>
-        :root { --primary: #1a252f; --accent: #d35400; }
-        body { font-family: sans-serif; margin: 0; background: #eef2f3; padding-top: 85px; }
-        .header { position: fixed; top: 0; width: 100%; background: var(--primary); padding: 12px; box-sizing: border-box; z-index: 1000; }
-        #buscador { width: 100%; padding: 14px; font-size: 18px; border-radius: 8px; border: none; outline: none; }
-        #status { color: #ecf0f1; font-size: 12px; text-align: center; margin-top: 6px; }
-        .contenedor { padding: 12px; max-width: 700px; margin: auto; }
-        .articulo-card { 
-            background: white; margin-bottom: 12px; padding: 18px; 
-            border-radius: 10px; border-left: 6px solid var(--accent);
-            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-        }
-        .articulo-card h2 { margin: 0 0 8px 0; font-size: 1.1em; color: var(--primary); text-transform: uppercase; }
-        .articulo-card p { margin: 0; line-height: 1.6; color: #333; }
-        .hidden { display: none; }
-    </style>
-</head>
-<body>
-
-<div class="header">
-    <input type="text" id="buscador" placeholder="🔎 Escribe para buscar..." disabled>
-    <div id="status">Buscando archivo reglamento.html...</div>
-</div>
-
-<div class="contenedor" id="visor">
-    <div style="text-align:center; padding:50px;">Cargando artículos...</div>
-</div>
-
-<script>
-    const visor = document.getElementById('visor');
-    const inputBusqueda = document.getElementById('buscador');
-    const status = document.getElementById('status');
-
-    // Intentamos leer el archivo
-    fetch('reglamento.html')
-        .then(response => {
-            if (!response.ok) throw new Error("No se encontró el archivo");
-            return response.text();
-        })
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            
-            // BUSQUEDA ULTRA-REFORZADA: 
-            // Buscamos todas las etiquetas que suelen tener texto en pdf2htmlEX
-            const elementos = doc.querySelectorAll('.t, div, p, span');
-            visor.innerHTML = '';
-            
-            let contenidoTemporal = "";
-            let tituloActual = "Sección General";
-            let encontrados = 0;
-
-            elementos.forEach((el) => {
-                const texto = el.innerText.trim();
-                if (texto.length < 2) return;
-
-                // Detectar inicio de artículo
-                if (/^Art[í|i]culo|^Art\./i.test(texto)) {
-                    if (contenidoTemporal.length > 5) {
-                        crearTarjeta(tituloActual, contenidoTemporal);
-                        encontrados++;
-                    }
-                    tituloActual = texto;
-                    contenidoTemporal = "";
-                } else {
-                    contenidoTemporal += " " + texto;
-                }
-            });
-
-            // Agregar el último bloque
-            crearTarjeta(tituloActual, contenidoTemporal);
-            
-            if (encontrados === 0 && contenidoTemporal.length > 10) {
-                // Si no detectó artículos individuales, muestra todo el bloque
-                crearTarjeta("Reglamento Completo", contenidoTemporal);
+fetch('reglamento.txt')
+    .then(response => response.text())
+    .then(text => {
+        const lineas = text.split('\n');
+        lineas.forEach(linea => {
+            if(linea.trim().length > 10) {
+                const [titulo, ...resto] = linea.split(':');
+                crearTarjeta(titulo, resto.join(':'));
             }
-
-            inputBusqueda.disabled = false;
-            status.innerText = "¡Carga completa!";
-        })
-        .catch(err => {
-            visor.innerHTML = "<div class='articulo-card'><h2>Error de carga</h2><p>No se pudo leer 'reglamento.html'. Asegúrate de que el archivo esté en la misma carpeta del index.</p></div>";
-            status.innerText = "Error: archivo no encontrado.";
-        });
-
-    function crearTarjeta(titulo, contenido) {
-        const div = document.createElement('div');
-        div.className = 'articulo-card';
-        div.innerHTML = `<h2>${titulo}</h2><p>${contenido}</p>`;
-        visor.appendChild(div);
-    }
-
-    inputBusqueda.addEventListener('input', function() {
-        const query = this.value.toLowerCase().trim();
-        const tarjetas = document.querySelectorAll('.articulo-card');
-        tarjetas.forEach(t => {
-            t.classList.toggle('hidden', !t.innerText.toLowerCase().includes(query));
         });
     });
-</script>
-</body>
-</html>
