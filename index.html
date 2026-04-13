@@ -3,39 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inspector Virtual - Paysandú</title>
+    <title>Buscador de Tránsito</title>
     <style>
         :root { --primary: #1a252f; --accent: #d35400; }
         body { font-family: sans-serif; margin: 0; background: #eef2f3; padding-top: 85px; }
-        
-        /* Cabecera */
-        .header { position: fixed; top: 0; width: 100%; background: var(--primary); padding: 12px; box-sizing: border-box; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .header { position: fixed; top: 0; width: 100%; background: var(--primary); padding: 12px; box-sizing: border-box; z-index: 1000; }
         #buscador { width: 100%; padding: 14px; font-size: 18px; border-radius: 8px; border: none; outline: none; }
-        #status { color: #ecf0f1; font-size: 11px; text-align: center; margin-top: 6px; font-weight: bold; }
-
-        /* Tarjetas */
+        #status { color: #ecf0f1; font-size: 12px; text-align: center; margin-top: 6px; }
         .contenedor { padding: 12px; max-width: 700px; margin: auto; }
         .articulo-card { 
             background: white; margin-bottom: 12px; padding: 18px; 
             border-radius: 10px; border-left: 6px solid var(--accent);
             box-shadow: 0 3px 6px rgba(0,0,0,0.1);
         }
-        .articulo-card h2 { margin: 0 0 8px 0; font-size: 1.1em; color: var(--primary); text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .articulo-card p { margin: 0; line-height: 1.6; color: #333; font-size: 1.05em; text-align: justify; }
-        
+        .articulo-card h2 { margin: 0 0 8px 0; font-size: 1.1em; color: var(--primary); text-transform: uppercase; }
+        .articulo-card p { margin: 0; line-height: 1.6; color: #333; }
         .hidden { display: none; }
-        .loading { text-align: center; padding: 50px; color: #7f8c8d; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <input type="text" id="buscador" placeholder="🔎 Buscar (ej: luces, alcohol, 13.1)..." disabled>
-    <div id="status">Conectando con reglamento.html...</div>
+    <input type="text" id="buscador" placeholder="🔎 Escribe para buscar..." disabled>
+    <div id="status">Buscando archivo reglamento.html...</div>
 </div>
 
 <div class="contenedor" id="visor">
-    <div class="loading" id="loader">Cargando reglamento...</div>
+    <div style="text-align:center; padding:50px;">Cargando artículos...</div>
 </div>
 
 <script>
@@ -43,50 +37,59 @@
     const inputBusqueda = document.getElementById('buscador');
     const status = document.getElementById('status');
 
-    // AQUÍ ACTUALICÉ EL NOMBRE A reglamento.html
-    const urlReglamento = 'reglamento.html';
-
-    fetch(urlReglamento)
+    // Intentamos leer el archivo
+    fetch('reglamento.html')
         .then(response => {
-            if (!response.ok) throw new Error("No se encontró el archivo reglamento.html");
+            if (!response.ok) throw new Error("No se encontró el archivo");
             return response.text();
         })
         .then(html => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             
-            // Extraemos las líneas de texto del PDF convertido
-            const lineas = doc.querySelectorAll('.t');
+            // BUSQUEDA ULTRA-REFORZADA: 
+            // Buscamos todas las etiquetas que suelen tener texto en pdf2htmlEX
+            const elementos = doc.querySelectorAll('.t, div, p, span');
             visor.innerHTML = '';
             
             let contenidoTemporal = "";
-            let tituloActual = "Introducción / General";
+            let tituloActual = "Sección General";
+            let encontrados = 0;
 
-            lineas.forEach((linea) => {
-                const texto = linea.innerText.trim();
-                
-                // Si detecta la palabra Artículo (o Articulo sin tilde), corta y crea tarjeta
+            elementos.forEach((el) => {
+                const texto = el.innerText.trim();
+                if (texto.length < 2) return;
+
+                // Detectar inicio de artículo
                 if (/^Art[í|i]culo|^Art\./i.test(texto)) {
-                    crearTarjeta(tituloActual, contenidoTemporal);
+                    if (contenidoTemporal.length > 5) {
+                        crearTarjeta(tituloActual, contenidoTemporal);
+                        encontrados++;
+                    }
                     tituloActual = texto;
                     contenidoTemporal = "";
                 } else {
                     contenidoTemporal += " " + texto;
                 }
             });
+
+            // Agregar el último bloque
             crearTarjeta(tituloActual, contenidoTemporal);
+            
+            if (encontrados === 0 && contenidoTemporal.length > 10) {
+                // Si no detectó artículos individuales, muestra todo el bloque
+                crearTarjeta("Reglamento Completo", contenidoTemporal);
+            }
 
             inputBusqueda.disabled = false;
-            inputBusqueda.placeholder = "🔎 Escribe para buscar...";
-            status.innerText = "¡Listo! Reglamento cargado.";
+            status.innerText = "¡Carga completa!";
         })
         .catch(err => {
-            visor.innerHTML = `<div class='articulo-card'><h2>Error</h2><p>No se pudo cargar 'reglamento.html'. Revisa que el nombre sea exacto en GitHub.</p></div>`;
-            status.innerText = "Error de carga.";
+            visor.innerHTML = "<div class='articulo-card'><h2>Error de carga</h2><p>No se pudo leer 'reglamento.html'. Asegúrate de que el archivo esté en la misma carpeta del index.</p></div>";
+            status.innerText = "Error: archivo no encontrado.";
         });
 
     function crearTarjeta(titulo, contenido) {
-        if (contenido.length < 5) return;
         const div = document.createElement('div');
         div.className = 'articulo-card';
         div.innerHTML = `<h2>${titulo}</h2><p>${contenido}</p>`;
@@ -96,20 +99,10 @@
     inputBusqueda.addEventListener('input', function() {
         const query = this.value.toLowerCase().trim();
         const tarjetas = document.querySelectorAll('.articulo-card');
-        let contador = 0;
-
         tarjetas.forEach(t => {
-            const txt = t.innerText.toLowerCase();
-            if (txt.includes(query)) {
-                t.classList.remove('hidden');
-                contador++;
-            } else {
-                t.classList.add('hidden');
-            }
+            t.classList.toggle('hidden', !t.innerText.toLowerCase().includes(query));
         });
-        status.innerText = query === "" ? "Mostrando todo" : `${contador} resultados`;
     });
 </script>
-
 </body>
 </html>
