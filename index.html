@@ -3,82 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador de Tránsito - Uruguay</title>
+    <title>Inspector Virtual - Paysandú</title>
     <style>
-        body { font-family: sans-serif; margin: 0; background: #f0f2f5; padding-top: 80px; }
-        .header { position: fixed; top: 0; width: 100%; background: #1a252f; padding: 15px; box-sizing: border-box; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-        #buscador { width: 100%; padding: 12px; font-size: 18px; border-radius: 8px; border: none; outline: none; }
-        .contenedor { padding: 15px; max-width: 800px; margin: auto; }
-        .articulo-caja { background: white; margin-bottom: 12px; padding: 15px; border-radius: 8px; border-left: 5px solid #d35400; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: block; }
-        .articulo-caja h2 { margin: 0 0 8px 0; font-size: 1.1em; color: #1a252f; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .articulo-caja p { margin: 0; line-height: 1.5; color: #333; }
+        :root { --primary: #1a252f; --accent: #d35400; }
+        body { font-family: sans-serif; margin: 0; background: #eef2f3; padding-top: 85px; }
+        
+        /* Cabecera */
+        .header { position: fixed; top: 0; width: 100%; background: var(--primary); padding: 12px; box-sizing: border-box; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        #buscador { width: 100%; padding: 14px; font-size: 18px; border-radius: 8px; border: none; outline: none; }
+        #status { color: #ecf0f1; font-size: 11px; text-align: center; margin-top: 6px; font-weight: bold; }
+
+        /* Tarjetas */
+        .contenedor { padding: 12px; max-width: 700px; margin: auto; }
+        .articulo-card { 
+            background: white; margin-bottom: 12px; padding: 18px; 
+            border-radius: 10px; border-left: 6px solid var(--accent);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        .articulo-card h2 { margin: 0 0 8px 0; font-size: 1.1em; color: var(--primary); text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .articulo-card p { margin: 0; line-height: 1.6; color: #333; font-size: 1.05em; text-align: justify; }
+        
         .hidden { display: none; }
-        #carga { text-align: center; color: #666; margin-top: 20px; }
+        .loading { text-align: center; padding: 50px; color: #7f8c8d; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <input type="text" id="buscador" placeholder="🔎 Buscar palabra o artículo..." disabled>
+    <input type="text" id="buscador" placeholder="🔎 Buscar (ej: luces, alcohol, 13.1)..." disabled>
+    <div id="status">Conectando con reglamento.html...</div>
 </div>
 
-<div class="contenedor" id="visor-reglamento">
-    <div id="carga">Cargando reglamento oficial...</div>
+<div class="contenedor" id="visor">
+    <div class="loading" id="loader">Cargando reglamento...</div>
 </div>
 
 <script>
-    const visor = document.getElementById('visor-reglamento');
+    const visor = document.getElementById('visor');
     const inputBusqueda = document.getElementById('buscador');
+    const status = document.getElementById('status');
 
-    // 1. FUNCIÓN QUE "LEE" TU OTRO ARCHIVO
-    fetch('reglamento.html')
-        .then(response => response.text())
-        .then(data => {
-            // Limpiamos el mensaje de carga
+    // AQUÍ ACTUALICÉ EL NOMBRE A reglamento.html
+    const urlReglamento = 'reglamento.html';
+
+    fetch(urlReglamento)
+        .then(response => {
+            if (!response.ok) throw new Error("No se encontró el archivo reglamento.html");
+            return response.text();
+        })
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Extraemos las líneas de texto del PDF convertido
+            const lineas = doc.querySelectorAll('.t');
             visor.innerHTML = '';
             
-            // Convertimos el texto del reglamento en un documento temporal para leerlo
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(data, 'text/html');
-            
-            // Buscamos todos los párrafos (<p>) del reglamento original
-            const parrafos = doc.querySelectorAll('p');
+            let contenidoTemporal = "";
+            let tituloActual = "Introducción / General";
 
-            parrafos.forEach((p, index) => {
-                if(p.innerText.trim().length > 10) {
-                    const caja = document.createElement('div');
-                    caja.className = 'articulo-caja';
-                    
-                    // Intentamos identificar si es un artículo por el texto
-                    let titulo = p.innerText.split('.')[0]; // Toma la primera frase como título
-                    if(!titulo.includes("Art")) titulo = "Sección " + (index + 1);
-
-                    caja.innerHTML = `<h2>${titulo}</h2><p>${p.innerText}</p>`;
-                    visor.appendChild(caja);
+            lineas.forEach((linea) => {
+                const texto = linea.innerText.trim();
+                
+                // Si detecta la palabra Artículo (o Articulo sin tilde), corta y crea tarjeta
+                if (/^Art[í|i]culo|^Art\./i.test(texto)) {
+                    crearTarjeta(tituloActual, contenidoTemporal);
+                    tituloActual = texto;
+                    contenidoTemporal = "";
+                } else {
+                    contenidoTemporal += " " + texto;
                 }
             });
+            crearTarjeta(tituloActual, contenidoTemporal);
 
-            // Activamos el buscador una vez que todo cargó
             inputBusqueda.disabled = false;
             inputBusqueda.placeholder = "🔎 Escribe para buscar...";
+            status.innerText = "¡Listo! Reglamento cargado.";
         })
         .catch(err => {
-            visor.innerHTML = "Error al cargar el reglamento. Asegúrate de que el nombre del archivo sea exacto.";
+            visor.innerHTML = `<div class='articulo-card'><h2>Error</h2><p>No se pudo cargar 'reglamento.html'. Revisa que el nombre sea exacto en GitHub.</p></div>`;
+            status.innerText = "Error de carga.";
         });
 
-    // 2. EL MOTOR DE BÚSQUEDA INSTANTÁNEO
+    function crearTarjeta(titulo, contenido) {
+        if (contenido.length < 5) return;
+        const div = document.createElement('div');
+        div.className = 'articulo-card';
+        div.innerHTML = `<h2>${titulo}</h2><p>${contenido}</p>`;
+        visor.appendChild(div);
+    }
+
     inputBusqueda.addEventListener('input', function() {
-        const filtro = this.value.toLowerCase();
-        const cajas = document.querySelectorAll('.articulo-caja');
-        
-        cajas.forEach(caja => {
-            const texto = caja.innerText.toLowerCase();
-            if (texto.includes(filtro)) {
-                caja.classList.remove('hidden');
+        const query = this.value.toLowerCase().trim();
+        const tarjetas = document.querySelectorAll('.articulo-card');
+        let contador = 0;
+
+        tarjetas.forEach(t => {
+            const txt = t.innerText.toLowerCase();
+            if (txt.includes(query)) {
+                t.classList.remove('hidden');
+                contador++;
             } else {
-                caja.classList.add('hidden');
+                t.classList.add('hidden');
             }
         });
+        status.innerText = query === "" ? "Mostrando todo" : `${contador} resultados`;
     });
 </script>
 
