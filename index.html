@@ -3,101 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador - Reglamento Nacional de Circulación Vial</title>
+    <title>Buscador de Tránsito - Uruguay</title>
     <style>
-        :root { --blue: #003366; --orange: #f39c12; --light: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--light); margin: 0; padding: 20px; }
-        .container { max-width: 1100px; margin: 0 auto; }
-        header { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; margin-bottom: 25px; }
-        h1 { color: var(--blue); margin: 0; font-size: 1.4rem; }
-        .sticky-search { position: sticky; top: 10px; z-index: 1000; background: var(--light); padding: 10px 0; }
-        #searchInput { width: 100%; padding: 18px; font-size: 1.2rem; border: 3px solid var(--blue); border-radius: 12px; outline: none; box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
-        #counter { text-align: right; font-weight: bold; color: #555; margin-top: 10px; height: 20px; }
-        .articulo { background: white; padding: 20px; border-radius: 10px; margin-bottom: 15px; border-left: 8px solid var(--blue); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .articulo h3 { margin-top: 0; color: var(--orange); font-size: 1.1rem; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .articulo p { color: #333; line-height: 1.6; margin-bottom: 0; white-space: pre-line; }
-        mark { background: #ffeb3b; color: black; padding: 0 3px; }
+        body { font-family: sans-serif; margin: 0; background: #f0f2f5; padding-top: 80px; }
+        .header { position: fixed; top: 0; width: 100%; background: #1a252f; padding: 15px; box-sizing: border-box; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        #buscador { width: 100%; padding: 12px; font-size: 18px; border-radius: 8px; border: none; outline: none; }
+        .contenedor { padding: 15px; max-width: 800px; margin: auto; }
+        .articulo-caja { background: white; margin-bottom: 12px; padding: 15px; border-radius: 8px; border-left: 5px solid #d35400; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: block; }
+        .articulo-caja h2 { margin: 0 0 8px 0; font-size: 1.1em; color: #1a252f; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .articulo-caja p { margin: 0; line-height: 1.5; color: #333; }
         .hidden { display: none; }
+        #carga { text-align: center; color: #666; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <header>
-        <h1>REGLAMENTO NACIONAL DE CIRCULACIÓN VIAL (DECRETO 118/984)</h1>
-        <p style="color: #888; font-size: 0.9rem;">Consulta Técnica para Inspectores</p>
-    </header>
+<div class="header">
+    <input type="text" id="buscador" placeholder="🔎 Buscar palabra o artículo..." disabled>
+</div>
 
-    <div class="sticky-search">
-        <input type="text" id="searchInput" placeholder="Escribe aquí para buscar (ej: preferencia, luces, alcohol)..." onkeyup="ejecutarBusqueda()">
-        <div id="counter"></div>
-    </div>
-
-    <div id="listaArticulos"></div>
+<div class="contenedor" id="visor-reglamento">
+    <div id="carga">Cargando reglamento oficial...</div>
 </div>
 
 <script>
-// BASE DE DATOS COMPLETA EXTRAÍDA DEL REGLAMENTO
-const data = [
-    { id: "1.1", t: "Competencias", c: "El Poder Ejecutivo reglamentará el tránsito en toda vía del territorio nacional librada al uso público." },
-    { id: "1.4", t: "Obligaciones", c: "Todo usuario de la vía pública está obligado a cumplir con el presente reglamento y a no hacer lo que signifique trastornos o peligro." },
-    { id: "2.1", t: "Uso de Calzadas", c: "Las calzadas son para uso de los vehículos. Excepcionalmente podrán ser usadas por peatones y animales." },
-    { id: "2.3", t: "Banquinas", c: "Las banquinas sólo podrán ser usadas por los vehículos, con precaución, para circulación de emergencia y detenciones de igual carácter." },
-    { id: "3.7", t: "Categorías de Licencias", c: "Cat A: Hasta 9 pasajeros y 4000kg. Cat B: Hasta 18 pasajeros y 7000kg. Cat C: Camiones simples. Cat D: Camiones con acoplado. Cat F: Ómnibus." },
-    { id: "4.2", t: "Alcohol y Aptitud", c: "Queda prohibido conducir en estado de ebriedad o bajo los efectos de drogas o psicofármacos que inhiban la capacidad de conducir." },
-    { id: "6.1", t: "Dimensiones Máximas", c: "Ancho: 2.60m. Alto: 4.10m (pasajeros), 4.30m (carga en corredores). Largo: Camión simple 13.20m, Camión con remolque 20m." },
-    { id: "7.1", t: "Luces Delanteras", c: "Faros principales: Luz blanca o amarillo selectivo. Luz baja: alcance 30m. Luz alta: alcance 100m." },
-    { id: "7.16", t: "Motos y Ciclomotores", c: "Deberán circular en todo momento con la luz baja encendida." },
-    { id: "12.1", t: "Ubicación en Calzada", c: "Los vehículos deberán circular por la mitad derecha de las calzadas." },
-    { id: "13.2", t: "Velocidades Máximas", c: "Carreteras: 90 km/h (general) o lo señalizado. Zonas urbanas: 45 km/h salvo señalización." },
-    { id: "15.1-15.7", t: "Preferencias de Paso", c: "El conductor que llegue a una intersección debe dar preferencia de paso a los vehículos que vienen por su derecha. Se debe detener ante señal de PARE y reducir ante CEDA EL PASO." },
-    { id: "18.2", t: "Prohibición de Estacionar", c: "Prohibido en doble fila, intersecciones, puentes, túneles, curvas, paradas de bus o frente a garajes." },
-    { id: "20.1", t: "Vehículos de Emergencia", c: "En urgencia y con señales audibles/visibles, pueden exceder límites de velocidad y no respetar ciertas señales bajo su responsabilidad." },
-    { id: "21.1", t: "Vehículos de Dos Ruedas", c: "Ciclistas y motociclistas tienen los mismos derechos y obligaciones que los demás conductores." },
-    { id: "27.1", t: "Sanciones", c: "Las infracciones serán sancionadas con observación, multa o inhabilitación temporal o definitiva para conducir." }
-];
+    const visor = document.getElementById('visor-reglamento');
+    const inputBusqueda = document.getElementById('buscador');
 
-function inicializar() {
-    const contenedor = document.getElementById('listaArticulos');
-    contenedor.innerHTML = data.map(art => `
-        <div class="articulo">
-            <h3>Art. ${art.id} - ${art.t}</h3>
-            <p>${art.c}</p>
-        </div>
-    `).join('');
-}
-
-function ejecutarBusqueda() {
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    const articulos = document.querySelectorAll('.articulo');
-    let encontrados = 0;
-
-    articulos.forEach(div => {
-        const titulo = div.querySelector('h3');
-        const contenido = div.querySelector('p');
-        const textoFull = div.innerText.toLowerCase();
-
-        if (query === "") {
-            div.classList.remove('hidden');
-            titulo.innerHTML = titulo.innerText;
-            contenido.innerHTML = contenido.innerText;
-        } else if (textoFull.includes(query)) {
-            div.classList.remove('hidden');
-            encontrados++;
+    // 1. FUNCIÓN QUE "LEE" TU OTRO ARCHIVO
+    fetch('reglamento.html')
+        .then(response => response.text())
+        .then(data => {
+            // Limpiamos el mensaje de carga
+            visor.innerHTML = '';
             
-            // Resaltador de texto
-            const regex = new RegExp(`(${query})`, 'gi');
-            titulo.innerHTML = titulo.innerText.replace(regex, '<mark>$1</mark>');
-            contenido.innerHTML = contenido.innerText.replace(regex, '<mark>$1</mark>');
-        } else {
-            div.classList.add('hidden');
-        }
+            // Convertimos el texto del reglamento en un documento temporal para leerlo
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data, 'text/html');
+            
+            // Buscamos todos los párrafos (<p>) del reglamento original
+            const parrafos = doc.querySelectorAll('p');
+
+            parrafos.forEach((p, index) => {
+                if(p.innerText.trim().length > 10) {
+                    const caja = document.createElement('div');
+                    caja.className = 'articulo-caja';
+                    
+                    // Intentamos identificar si es un artículo por el texto
+                    let titulo = p.innerText.split('.')[0]; // Toma la primera frase como título
+                    if(!titulo.includes("Art")) titulo = "Sección " + (index + 1);
+
+                    caja.innerHTML = `<h2>${titulo}</h2><p>${p.innerText}</p>`;
+                    visor.appendChild(caja);
+                }
+            });
+
+            // Activamos el buscador una vez que todo cargó
+            inputBusqueda.disabled = false;
+            inputBusqueda.placeholder = "🔎 Escribe para buscar...";
+        })
+        .catch(err => {
+            visor.innerHTML = "Error al cargar el reglamento. Asegúrate de que el nombre del archivo sea exacto.";
+        });
+
+    // 2. EL MOTOR DE BÚSQUEDA INSTANTÁNEO
+    inputBusqueda.addEventListener('input', function() {
+        const filtro = this.value.toLowerCase();
+        const cajas = document.querySelectorAll('.articulo-caja');
+        
+        cajas.forEach(caja => {
+            const texto = caja.innerText.toLowerCase();
+            if (texto.includes(filtro)) {
+                caja.classList.remove('hidden');
+            } else {
+                caja.classList.add('hidden');
+            }
+        });
     });
-
-    document.getElementById('counter').innerText = query !== "" ? `Resultados: ${encontrados}` : "";
-}
-
-inicializar();
 </script>
 
 </body>
